@@ -1,0 +1,32 @@
+[package]
+name = "mini-io-queue"
+version = "0.1.0"
+edition = "2021"
+description = "Fixed-length, allocation and lock-free, async I/O oriented single-producer single-consumer queues."
+keywords = ["queue", "io", "async", "lockfree", "no_std"]
+homepage = "https://github.com/cpdt/mini-io-queue"
+repository = "https://github.com/cpdt/mini-io-queue"
+license = "MIT"
+
+[features]
+"default" = ["blocking", "nonblocking", "heap-buffer", "std-io"]
+"asyncio" = ["futures", "alloc"]
+"blocking" = ["std"]
+"nonblocking" = ["alloc"]
+"heap-buffer" = ["alloc"]
+"stack-buffer" = ["array-init"]
+"std-io" = ["std", "futures/std"]
+
+"alloc" = []
+"std" = []
+
+[dependencies]
+array-init = { version = "2.0", optional = true }
+futures = { version = "0.3", optional = true, default-features = false }
+
+[dev-dependencies]
+futures = { version = "0.3", features = ["executor"] }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
