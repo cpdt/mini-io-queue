@@ -1,5 +1,6 @@
 use core::ops::Range;
 use core::sync::atomic::{AtomicUsize, Ordering};
+use crate::cache_padded::CachePadded;
 
 /// A low-level atomic ring-buffer building block.
 ///
@@ -20,9 +21,9 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 /// [`nonblocking`]: crate::nonblocking
 /// [`asyncio`]: crate::asyncio
 pub struct Ring {
+    left: CachePadded<AtomicUsize>,
+    right: CachePadded<AtomicUsize>,
     capacity: usize,
-    left: AtomicUsize,
-    right: AtomicUsize,
 }
 
 impl Ring {
@@ -31,9 +32,9 @@ impl Ring {
     /// The ring starts with an empty left region and a right range from index 0 to the capacity.
     pub fn new(capacity: usize) -> Self {
         Ring {
+            left: CachePadded::new(AtomicUsize::new(0)),
+            right: CachePadded::new(AtomicUsize::new(0)),
             capacity,
-            left: AtomicUsize::new(0),
-            right: AtomicUsize::new(0),
         }
     }
 
