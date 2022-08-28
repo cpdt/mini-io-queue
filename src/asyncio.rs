@@ -167,6 +167,7 @@ mod heap_constructors {
 #[cfg(feature = "heap-buffer")]
 pub use self::heap_constructors::*;
 
+#[derive(Debug)]
 struct State<S> {
     ring: Ring,
     storage: S,
@@ -200,6 +201,7 @@ pub enum ReadExactError {
 /// A reader will automatically [`close`] itself when dropped.
 ///
 /// [`close`]: Reader::close
+#[derive(Debug)]
 pub struct Reader<S> {
     state: Arc<State<S>>,
 }
@@ -210,6 +212,7 @@ pub struct Reader<S> {
 /// sent back to the writer from the start of the reader's buffer to allow it to write more data.
 ///
 /// A writer will automatically close itself when dropped.
+#[derive(Debug)]
 pub struct Writer<S> {
     state: Arc<State<S>>,
 }

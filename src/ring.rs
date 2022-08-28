@@ -20,6 +20,7 @@ use crate::cache_padded::CachePadded;
 ///
 /// [`nonblocking`]: crate::nonblocking
 /// [`asyncio`]: crate::asyncio
+#[derive(Debug, Default)]
 pub struct Ring {
     left: CachePadded<AtomicUsize>,
     right: CachePadded<AtomicUsize>,

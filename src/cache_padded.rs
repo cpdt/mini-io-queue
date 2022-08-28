@@ -1,4 +1,4 @@
-//! Vendored from https://github.com/smol-rs/cache-padded (commit 8b45665).
+//! Vendored from <https://github.com/smol-rs/cache-padded> (commit 8b45665).
 //!
 //! Prevent false sharing by padding and aligning to the length of a cache line.
 //!
@@ -8,6 +8,7 @@
 //! cores. Use CachePadded to ensure updating one piece of data doesn't invalidate other cached
 //! data.
 
+use core::fmt;
 use core::ops::{Deref, DerefMut};
 
 /// Pads and aligns data to the length of a cache line.
@@ -106,5 +107,17 @@ impl<T> Deref for CachePadded<T> {
 impl<T> DerefMut for CachePadded<T> {
     fn deref_mut(&mut self) -> &mut T {
         &mut self.0
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for CachePadded<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("CachePadded").field(&self.0).finish()
+    }
+}
+
+impl<T> From<T> for CachePadded<T> {
+    fn from(t: T) -> Self {
+        CachePadded::new(t)
     }
 }

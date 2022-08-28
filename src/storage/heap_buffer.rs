@@ -1,6 +1,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
+use core::fmt;
 
 /// Backing buffer for a queue, allocated on the heap.
 ///
@@ -55,5 +56,12 @@ impl<T> From<Box<[T]>> for HeapBuffer<T> {
         // fixme: this might not be stable, ideally we should not rely on it.
         let unsafe_cell_box: Box<[UnsafeCell<T>]> = unsafe { core::mem::transmute(boxed_slice) };
         HeapBuffer(unsafe_cell_box)
+    }
+}
+
+impl<T> fmt::Debug for HeapBuffer<T> where T: fmt::Debug {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("HeapBuffer")
+            .finish()
     }
 }

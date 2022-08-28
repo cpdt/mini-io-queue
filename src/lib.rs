@@ -92,7 +92,7 @@
 
 #![cfg_attr(not(any(feature = "std")), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(missing_docs)]
+#![deny(missing_docs, missing_debug_implementations)]
 #![deny(rustdoc::broken_intra_doc_links)]
 #![deny(rustdoc::private_intra_doc_links)]
 

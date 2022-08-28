@@ -165,6 +165,7 @@ mod heap_constructors {
 #[cfg(feature = "heap-buffer")]
 pub use self::heap_constructors::*;
 
+#[derive(Debug)]
 struct State<S> {
     ring: Ring,
     storage: S,
@@ -194,6 +195,7 @@ pub enum ReadExactError {
 ///
 /// Values sent by the writer will be added to the end of the reader's buffer, and capacity can be
 /// sent back to the writer from the start of the reader's buffer to allow it to write more data.
+#[derive(Debug)]
 pub struct Reader<S> {
     state: Arc<State<S>>,
     data_available_mutex: Mutex<()>,
@@ -203,6 +205,7 @@ pub struct Reader<S> {
 ///
 /// Values sent by the writer will be added to the end of the reader's buffer, and capacity can be
 /// sent back to the writer from the start of the reader's buffer to allow it to write more data.
+#[derive(Debug)]
 pub struct Writer<S> {
     state: Arc<State<S>>,
     space_available_mutex: Mutex<()>,

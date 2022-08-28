@@ -1,6 +1,7 @@
 use array_init::array_init;
 use core::cell::UnsafeCell;
 use core::mem::MaybeUninit;
+use core::fmt;
 
 /// Backing buffer for a queue, allocated on the stack.
 ///
@@ -52,5 +53,12 @@ impl<T, const N: usize> From<[T; N]> for StackBuffer<T, N> {
         // Safety: UnsafeCell is repr(transparent), so has the same alignment as T.
         let unsafe_cell_arr = unsafe { core::ptr::read(unsafe_cell_arr_ptr) };
         StackBuffer(unsafe_cell_arr)
+    }
+}
+
+impl<T, const N: usize> fmt::Debug for StackBuffer<T, N> where T: fmt::Debug {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("StackBuffer")
+            .finish()
     }
 }

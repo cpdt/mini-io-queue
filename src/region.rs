@@ -8,7 +8,7 @@ use core::ops::{Bound, Index, IndexMut, Range, RangeBounds};
 /// without allocations or copies.
 ///
 /// [`Ring`]: crate::Ring
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Region<'a, T>(&'a [T], &'a [T]);
 
 impl<'a, T> Region<'a, T> {
@@ -165,7 +165,7 @@ impl<'a, T> Index<usize> for Region<'a, T> {
 /// This is the mutable equivalent to [`Region`], allowing mutable access to the contained slices.
 ///
 /// [`Region`]: crate::Region
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct RegionMut<'a, T>(&'a mut [T], &'a mut [T]);
 
 impl<'a, T> RegionMut<'a, T> {
