@@ -8,7 +8,7 @@
 [crates-badge]: https://img.shields.io/crates/v/mini-io-queue.svg
 [crates-url]: https://crates.io/crates/mini-io-queue
 [docs-badge]: https://img.shields.io/docsrs/mini-io-queue
-[docs-url]: https://docs.rs/mini-io-queue/latest/mini-io-queue/
+[docs-url]: https://docs.rs/mini-io-queue/
 [mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [mit-url]: https://github.com/cpdt/mini-io-queue/blob/master/LICENSE
 [build-badge]: https://github.com/cpdt/mini-io-queue/workflows/Build/badge.svg
