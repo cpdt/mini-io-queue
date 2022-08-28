@@ -101,9 +101,9 @@ extern crate core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+mod cache_padded;
 mod region;
 mod ring;
-mod cache_padded;
 pub mod storage;
 
 #[cfg(feature = "asyncio")]

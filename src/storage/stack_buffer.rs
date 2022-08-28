@@ -1,7 +1,7 @@
 use array_init::array_init;
 use core::cell::UnsafeCell;
-use core::mem::MaybeUninit;
 use core::fmt;
+use core::mem::MaybeUninit;
 
 /// Backing buffer for a queue, allocated on the stack.
 ///
@@ -56,9 +56,11 @@ impl<T, const N: usize> From<[T; N]> for StackBuffer<T, N> {
     }
 }
 
-impl<T, const N: usize> fmt::Debug for StackBuffer<T, N> where T: fmt::Debug {
+impl<T, const N: usize> fmt::Debug for StackBuffer<T, N>
+where
+    T: fmt::Debug,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("StackBuffer")
-            .finish()
+        f.debug_tuple("StackBuffer").finish()
     }
 }

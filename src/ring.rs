@@ -1,6 +1,6 @@
+use crate::cache_padded::CachePadded;
 use core::ops::Range;
 use core::sync::atomic::{AtomicUsize, Ordering};
-use crate::cache_padded::CachePadded;
 
 /// A low-level atomic ring-buffer building block.
 ///

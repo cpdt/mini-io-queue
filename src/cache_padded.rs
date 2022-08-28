@@ -29,12 +29,12 @@ use core::ops::{Deref, DerefMut};
 // Sources:
 // - https://github.com/golang/go/blob/3dd58676054223962cd915bb0934d1f9f489d4d2/src/internal/cpu/cpu_ppc64x.go#L9
 #[cfg_attr(
-any(
-target_arch = "x86_64",
-target_arch = "aarch64",
-target_arch = "powerpc64",
-),
-repr(align(128))
+    any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+    ),
+    repr(align(128))
 )]
 // arm, mips, mips64, and riscv64 have 32-byte cache line size.
 //
@@ -45,13 +45,13 @@ repr(align(128))
 // - https://github.com/golang/go/blob/3dd58676054223962cd915bb0934d1f9f489d4d2/src/internal/cpu/cpu_mips64x.go#L9
 // - https://github.com/golang/go/blob/3dd58676054223962cd915bb0934d1f9f489d4d2/src/internal/cpu/cpu_riscv64.go#L7
 #[cfg_attr(
-any(
-target_arch = "arm",
-target_arch = "mips",
-target_arch = "mips64",
-target_arch = "riscv64",
-),
-repr(align(32))
+    any(
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "riscv64",
+    ),
+    repr(align(32))
 )]
 // s390x has 256-byte cache line size.
 //
@@ -66,31 +66,22 @@ repr(align(32))
 //
 // All others are assumed to have 64-byte cache line size.
 #[cfg_attr(
-not(any(
-target_arch = "x86_64",
-target_arch = "aarch64",
-target_arch = "powerpc64",
-target_arch = "arm",
-target_arch = "mips",
-target_arch = "mips64",
-target_arch = "riscv64",
-target_arch = "s390x",
-)),
-repr(align(64))
+    not(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "riscv64",
+        target_arch = "s390x",
+    )),
+    repr(align(64))
 )]
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 pub struct CachePadded<T>(T);
 
 impl<T> CachePadded<T> {
-    /// Pads and aligns a piece of data to the length of a cache line.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use cache_padded::CachePadded;
-    ///
-    /// let padded = CachePadded::new(1);
-    /// ```
     pub const fn new(t: T) -> CachePadded<T> {
         CachePadded(t)
     }

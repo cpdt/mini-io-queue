@@ -59,9 +59,11 @@ impl<T> From<Box<[T]>> for HeapBuffer<T> {
     }
 }
 
-impl<T> fmt::Debug for HeapBuffer<T> where T: fmt::Debug {
+impl<T> fmt::Debug for HeapBuffer<T>
+where
+    T: fmt::Debug,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("HeapBuffer")
-            .finish()
+        f.debug_tuple("HeapBuffer").finish()
     }
 }
