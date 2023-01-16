@@ -373,14 +373,19 @@ impl<S> Reader<S> {
     /// If the return value is `Ok(n)`, it is guaranteed that `n == buf.len()`.
     ///
     /// # Cancel safety
-    /// This method is cancel safe. If you use it in a `select!` statement and some other branch
-    /// completes first, then it is guaranteed that no data was read.
+    /// This method is not cancellation safe. If the method is used in a `select!` statement and
+    /// some other branch completes first, then some data may already have been read into `buf`.
     pub async fn read_exact<T>(&mut self, buf: &mut [T]) -> Result<usize, ReadExactError>
     where
         S: Storage<T>,
         T: Clone,
     {
-        ReadExact { reader: self, buf }.await
+        ReadExact {
+            reader: self,
+            buf,
+            read_bytes: 0,
+        }
+        .await
     }
 
     /// Close the reader, indicating to the writer that no more data will be read.
@@ -451,6 +456,7 @@ where
 struct ReadExact<'a, T, S> {
     reader: &'a mut Reader<S>,
     buf: &'a mut [T],
+    read_bytes: usize,
 }
 
 impl<'a, T, S> Future for ReadExact<'a, T, S>
@@ -463,26 +469,39 @@ where
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let me = self.get_mut();
 
+        // Avoid polling the reader if the buffer is empty. This branch should only be reachable
+        // on the first poll, before any data has been read.
+        if me.buf.is_empty() {
+            debug_assert_eq!(me.read_bytes, 0);
+            return Poll::Ready(Ok(0));
+        }
+
         let src_buf = match me.reader.poll_fill_buf(cx) {
             Poll::Ready(src_buf) => src_buf,
             Poll::Pending => return Poll::Pending,
         };
+        let dest_buf = &mut me.buf[me.read_bytes..];
 
-        let len = me.buf.len();
-        if src_buf.len() < len {
-            return if me.reader.is_writer_open() {
-                // Not enough data is ready to write to the buffer.
-                Poll::Pending
-            } else {
-                // The writer has closed, required data will never be ready.
-                Poll::Ready(Err(ReadExactError::WriterClosed))
-            };
+        // Copy as much data as possible.
+        let read_len = dest_buf.len().min(src_buf.len());
+        src_buf
+            .slice(..read_len)
+            .clone_to_slice(&mut dest_buf[..read_len]);
+        me.reader.consume(read_len);
+
+        // Offset buffer for the next read.
+        me.read_bytes += read_len;
+
+        if dest_buf.len() == read_len {
+            // The buffer has been filled.
+            Poll::Ready(Ok(me.read_bytes))
+        } else if me.reader.is_writer_open() {
+            // Need to wait for more data to fill the buffer.
+            Poll::Pending
+        } else {
+            // The writer has closed, required data will never be ready.
+            Poll::Ready(Err(ReadExactError::WriterClosed))
         }
-
-        src_buf.slice(..len).clone_to_slice(me.buf);
-        me.reader.consume(len);
-
-        Poll::Ready(Ok(len))
     }
 }
 
@@ -664,14 +683,20 @@ impl<S> Writer<S> {
     /// If the return value is `Ok(n)`, it is guaranteed that `n == buf.len()`.
     ///
     /// # Cancel safety
-    /// This method is cancel safe. If you use it in a `select!` statement and some other branch
-    /// completes first, then it is guaranteed that no data was written.
+    /// This method is not cancellation safe. If it is used in a `select!` statement and some other
+    /// branch completes first, then the provided buffer may have been partially written, but
+    /// future calls to `write_all` will start over from the beginning of the buffer.
     pub async fn write_all<T>(&mut self, buf: &[T]) -> Result<usize, WriteError>
     where
         S: Storage<T>,
         T: Clone,
     {
-        WriteAll { writer: self, buf }.await
+        WriteAll {
+            writer: self,
+            buf,
+            written_bytes: 0,
+        }
+        .await
     }
 
     /// Attempt to flush the buffer, ensuring that any items waiting to be read are consumed by the
@@ -782,6 +807,7 @@ where
 struct WriteAll<'a, T, S> {
     writer: &'a mut Writer<S>,
     buf: &'a [T],
+    written_bytes: usize,
 }
 
 impl<'a, T, S> Future for WriteAll<'a, T, S>
@@ -794,26 +820,41 @@ where
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let me = self.get_mut();
 
+        // Avoid polling the writer if the buffer is empty. This branch should only be reachable
+        // on the first poll, before any data has been written.
+        if me.buf.is_empty() {
+            debug_assert_eq!(me.written_bytes, 0);
+            return Poll::Ready(Ok(0));
+        }
+
         let mut dest_buf = match me.writer.poll_empty_buf(cx) {
             Poll::Ready(dest_buf) => dest_buf,
             Poll::Pending => return Poll::Pending,
         };
+        let src_buf = &me.buf[me.written_bytes..];
 
         if dest_buf.is_empty() {
             // The reader has closed.
             return Poll::Ready(Err(WriteError::ReaderClosed));
         }
 
-        let len = me.buf.len();
-        if dest_buf.len() < len {
-            // Not enough space is ready to write to the buffer.
-            return Poll::Pending;
+        // Copy as much data as possible.
+        let write_len = dest_buf.len().min(src_buf.len());
+        dest_buf
+            .slice_mut(..write_len)
+            .clone_from_slice(&src_buf[..write_len]);
+        me.writer.feed(write_len);
+
+        // Offset buffer for the next write.
+        me.written_bytes += write_len;
+
+        if src_buf.len() == write_len {
+            // All data has been written.
+            Poll::Ready(Ok(me.written_bytes))
+        } else {
+            // Need to wait for more space to write remaining data.
+            Poll::Pending
         }
-
-        dest_buf.slice_mut(..len).clone_from_slice(me.buf);
-        me.writer.feed(len);
-
-        Poll::Ready(Ok(len))
     }
 }
 
