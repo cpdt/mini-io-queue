@@ -45,6 +45,29 @@ impl Ring {
         self.capacity
     }
 
+    /// Returns an object that implements [`Display`] with specific formatting. This is useful for
+    /// debugging the stage of the ring.
+    ///
+    /// # Example
+    /// ```
+    /// use mini_io_queue::Ring;
+    ///
+    /// let ring = Ring::new(16);
+    /// ring.advance_right(4);
+    ///
+    /// let s = format!("{}", ring.display(16, 'L', 'R'));
+    /// assert_eq!(s, "LLLLRRRRRRRRRRRR");
+    /// ```
+    #[inline]
+    pub fn display(&self, width: usize, left_char: char, right_char: char) -> Display {
+        Display {
+            ring: self,
+            width,
+            left_char,
+            right_char,
+        }
+    }
+
     /// Gets the range of indices in both chunks of the left region. Both or one range can be empty.
     /// The ranges will never overlap.
     ///
@@ -222,5 +245,55 @@ impl Ring {
                 Some(right.wrapping_add(len) % (self.capacity * 2))
             })
             .unwrap();
+    }
+}
+
+/// Helper struct for printing formatted rings with [`format!`] and `{}`.
+#[derive(Debug)]
+pub struct Display<'a> {
+    ring: &'a Ring,
+    width: usize,
+    left_char: char,
+    right_char: char,
+}
+
+impl core::fmt::Display for Display<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let left = self.ring.left.load(Ordering::Acquire);
+        let right = self.ring.right.load(Ordering::Acquire);
+
+        let left_offset = left % self.ring.capacity;
+        let right_offset = right % self.ring.capacity;
+
+        let cap_f32 = self.ring.capacity as f32;
+        let width_f32 = self.width as f32;
+        let left_index = ((left_offset as f32 / cap_f32) * width_f32) as usize;
+        let right_index = ((right_offset as f32 / cap_f32) * width_f32) as usize;
+
+        // left is empty if left == right
+        if left == right {
+            for _ in 0..self.width {
+                write!(f, "{}", self.right_char)?;
+            }
+            return Ok(());
+        }
+
+        let (outer_char, inner_char, inner_start, inner_end) = if left_offset >= right_offset {
+            (self.left_char, self.right_char, right_index, left_index)
+        } else {
+            (self.right_char, self.left_char, left_index, right_index)
+        };
+
+        for _ in 0..inner_start {
+            write!(f, "{outer_char}")?;
+        }
+        for _ in inner_start..inner_end {
+            write!(f, "{inner_char}")?;
+        }
+        for _ in inner_end..self.width {
+            write!(f, "{outer_char}")?;
+        }
+
+        Ok(())
     }
 }
